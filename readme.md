@@ -1,14 +1,15 @@
 
-## Usage
+## tutorial
 
-## install dependency, only one time
+### 1. install dependency, only one time
 
-npm i ethers
-npm i minimist
+    npm i ethers
 
-## fill the configs.json and receivers.json
+    npm i minimist
 
-## get help info and run
+### 2. fill the configs.json and receivers.json
 
-node tokendistributor.js
+### 3. get help info and run
+
+    node tokendistributor.js
 
