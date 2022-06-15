@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "ethers": "^5.6.8",
+    "minimist": "^1.2.6"
+  }
+}
