@@ -11,5 +11,5 @@
 
 ### 3. get help info and run
 
-    node tokendistributor.js
+    node TokenDistributor.js
 
