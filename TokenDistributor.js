@@ -14,6 +14,7 @@ const STR_TYPE_NUMBER = "number"
 // system parameters
 let retryTimes = 5
 let sleepTime = 3000
+
 let configsFormat = {
     "privatekey": {
         "type": STR_TYPE_STRING,
@@ -107,6 +108,9 @@ async function distributeCore(rec){
         }
         catch(err){
             console.log(`the ${i+1}-th try failed with error: ${err}`)
+            if(i == retryTimes - 1){
+                process.exit()
+            }
         }
     }
 }
