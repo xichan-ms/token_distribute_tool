@@ -187,11 +187,11 @@ async function main(){
     for (let index = 0; index < receivers.length; index++) {
         let rec = receivers[index]
 
-        console.log(`------------ nonce ${rec[index][2]} address ${rec[index][0]} should paid ${rec[index][1]} ------------`)
+        console.log(`------------ nonce ${rec[2]} address ${rec[0]} should paid ${rec[1]} ------------`)
 
         await distributeCore(rec)
 
-        console.log(`------------ nonce ${rec[index][2]} address ${rec[index][0]} paid finished ------------`)
+        console.log(`------------ nonce ${rec[2]} address ${rec[0]} paid finished ------------`)
 
         console.log(`sleep ${sleepTime/1000}s`)
         await wait(sleepTime)
