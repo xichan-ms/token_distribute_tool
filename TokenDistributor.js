@@ -82,7 +82,7 @@ function SetTx(rec){
         Tx.to = configs[STR_ERC20].erc20contractaddress
         Tx.value = ethers.BigNumber.from("0")
 
-        let valStr = ethers.utils.parseUnits(`${rec[1]}`, 18).toHexString().slice(2)
+        let valStr = ethers.utils.parseUnits(`${rec[1]}`, configs[STR_ERC20].decimals).toHexString().slice(2)
         Tx.data = '0xa9059cbb000000000000000000000000' + rec[0].slice(2) + zeroHelper.slice(0, 64 - valStr.length) + valStr
     }
     return Tx
