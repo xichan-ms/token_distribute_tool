@@ -1,6 +1,7 @@
 const {ethers} = require("ethers")
 const configs = require('./configs')
-const receivers = require('./receivers')
+const fs = require('fs')
+const sd = require('silly-datetime')
 
 // ******************************************************* parameters *************************************************************
 
@@ -12,7 +13,7 @@ const STR_TYPE_STRING = "string"
 const STR_TYPE_NUMBER = "number"
 
 // system parameters
-let retryTimes = 5
+let retryTimes = 6
 let sleepTime = 3000
 
 let configsFormat = {
@@ -56,11 +57,69 @@ let distributeType = ""
 let testMode = true
 let zeroHelper = "0000000000000000000000000000000000000000000000000000000000000000"
 
+let receiversPath = "./receivers.csv"
+let csvRltTitle = "Address,Value,Nonce,TxHash\n"
+let csvColumnsCount = 3
+
 // wallet parameters
 let chainProvider = new ethers.providers.JsonRpcProvider({url: configs.rpc})
 let wallet = new ethers.Wallet(configs.privatekey)
 
 // ******************************************************* functions *************************************************************
+
+function curHumanTime(){
+    return sd.format(new Date(), 'YYYY-MM-DD_HH:mm:ss')
+}
+
+function writeCsv(sendRltStr, filePath){
+    try {
+        fs.writeFileSync(filePath, sendRltStr)
+    } catch (err) {
+        console.error(`failed to write file ${filePath}, ${err}`)
+    }
+}
+
+function loadCsvToJsonObj(filePath){
+    let csvStr = ""
+    try {
+        csvStr = fs.readFileSync(`${filePath}`, 'utf8')
+    } catch (err) {
+        console.error(`failed to read file ${filePath}, ${err}`)
+        return [false, null] 
+    }
+
+    let rlt = []
+    let lines = csvStr.split("\n")
+
+    for (let index = 1; index < lines.length; index++) {
+        let curLine = lines[index]
+        let fields = curLine.split(",")
+
+        let fieldsRlt = checkRowFieldNotnulls(fields, csvColumnsCount)
+        if(!fieldsRlt[0]){
+            return [false, null]
+        }
+
+        rlt.push(fieldsRlt[1])
+    }
+    
+    return [true, rlt] 
+}
+
+function checkRowFieldNotnulls(fields, fieldCount){
+    let rlt = []
+    if(fields.length < fieldCount){
+        return [false, null]
+    }
+    for (let index = 0; index < fieldCount; index++) {
+        let curField = fields[index]
+        if(curField.trim() == ""){
+            return [false, null]
+        }
+        rlt.push(curField.trim())
+    }
+    return [true, rlt]
+}
 
 function wait(ms) {
     return new Promise(resolve => setTimeout(() =>resolve(), ms));
@@ -71,7 +130,7 @@ function SetTx(rec){
         gasPrice: ethers.BigNumber.from(configs.gasprice),
         gasLimit: ethers.BigNumber.from(configs[distributeType].gaslimit),
         chainId: configs.chainid,
-        nonce: rec[2],
+        nonce: ethers.BigNumber.from(rec[2]),
     }
 
     if(distributeType == STR_NATIVE){
@@ -97,7 +156,7 @@ async function distributeCore(rec){
     console.log(`tx_hash: ${configs.explorerprefix}${txParse.hash}`)
 
     if(testMode){
-        return
+        return `${configs.explorerprefix}${txParse.hash}`
     }
 
     for(let i = 0; i < retryTimes; i++){
@@ -108,11 +167,14 @@ async function distributeCore(rec){
         }
         catch(err){
             console.log(`the ${i+1}-th try failed with error: ${err}`)
+            await wait(1000)
             if(i == retryTimes - 1){
                 process.exit()
             }
         }
     }
+
+    return `${configs.explorerprefix}${txParse.hash}`
 }
 
 function parameterChecker(temConfigs, temConfigsFormat){
@@ -183,19 +245,30 @@ async function main(){
         return
     }
 
+    let receiversRlt = loadCsvToJsonObj(receiversPath)
+    if(!receiversRlt[0]){
+        console.error(`fatal error in file ${receiversPath}`)
+        return 
+    }
+    let receivers = receiversRlt[1]
+
+    let sendRltStr = csvRltTitle
+
     // loop receivers and distribute token
     for (let index = 0; index < receivers.length; index++) {
         let rec = receivers[index]
 
         console.log(`------------ nonce ${rec[2]} address ${rec[0]} should paid ${rec[1]} ------------`)
 
-        await distributeCore(rec)
+        sendRltStr += `${rec[0]},${rec[1]},${rec[2]},${await distributeCore(rec)},\n`
 
         console.log(`------------ nonce ${rec[2]} address ${rec[0]} paid finished ------------`)
 
         console.log(`sleep ${sleepTime/1000}s`)
         await wait(sleepTime)
     }
+
+    writeCsv(sendRltStr, receiversPath+`_result_${curHumanTime()}.csv`)
 }
 
 main().then(()=>{
