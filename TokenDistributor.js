@@ -68,7 +68,7 @@ let wallet = new ethers.Wallet(configs.privatekey)
 // ******************************************************* functions *************************************************************
 
 function curHumanTime(){
-    return sd.format(new Date(), 'YYYY-MM-DD_HH:mm:ss')
+    return sd.format(new Date(), 'YYYY_MM_DD_HH_mm_ss')
 }
 
 function writeCsv(sendRltStr, filePath){
