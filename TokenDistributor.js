@@ -156,7 +156,7 @@ async function distributeCore(rec){
     console.log(`tx_hash: ${configs.explorerprefix}${txParse.hash}`)
 
     if(testMode){
-        return `${configs.explorerprefix}${txParse.hash}`
+        return [true, `${configs.explorerprefix}${txParse.hash}`]
     }
 
     for(let i = 0; i < retryTimes; i++){
@@ -169,12 +169,12 @@ async function distributeCore(rec){
             console.log(`the ${i+1}-th try failed with error: ${err}`)
             await wait(1000)
             if(i == retryTimes - 1){
-                process.exit()
+                return [false, ""]
             }
         }
     }
 
-    return `${configs.explorerprefix}${txParse.hash}`
+    return [true, `${configs.explorerprefix}${txParse.hash}`]
 }
 
 function parameterChecker(temConfigs, temConfigsFormat){
@@ -260,7 +260,12 @@ async function main(){
 
         console.log(`------------ nonce ${rec[2]} address ${rec[0]} should paid ${rec[1]} ------------`)
 
-        sendRltStr += `${rec[0]},${rec[1]},${rec[2]},${await distributeCore(rec)},\n`
+        let distributeRlt = await distributeCore(rec)
+        if(!distributeRlt[0]){
+            console.log("fatal error, process exit.")
+            break
+        }
+        sendRltStr += `${rec[0]},${rec[1]},${rec[2]},${distributeRlt[1]},\n`
 
         console.log(`------------ nonce ${rec[2]} address ${rec[0]} paid finished ------------`)
 
